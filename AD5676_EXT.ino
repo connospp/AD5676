@@ -41,7 +41,7 @@ void loop() {
       tempbuf[0] = (convertValue(setTo) | tempbuf[0]) >> 8 << 8; //Enter Value in Mask and shift in position First byte
       tempbuf[0] = tempbuf[1] >> 16 | tempbuf[0] << 8>>8;
 
-      executeSPI(tempbuf, 0);
+      executeSPI((uint32_t*)tempbuf); // Requests read for selected channel
     }
 
     else if (req.indexOf("Read back") >= 0) {
@@ -58,7 +58,7 @@ void loop() {
       /* **************************/
 
       float setTo = getUserReq(1);
-      unsigned short newValue = convertValue(current+setTo); // Creates new value
+      unsigned short newValue = convertValue(current + setTo); // Creates new value
       byteSwapNewDacValue(newValue, selectChannel);
 
     }
@@ -70,7 +70,7 @@ void loop() {
       /* **************************/
 
       float setTo = getUserReq(2);
-      unsigned short newValue = convertValue(current- setTo); // Creates new value
+      unsigned short newValue = convertValue(current - setTo); // Creates new value
       byteSwapNewDacValue(newValue, selectChannel);
     }
     else
@@ -90,7 +90,7 @@ void byteSwapNewDacValue (unsigned short newValue, unsigned long selectChannel) 
   tempbuf[0] = (newValue | tempbuf[0]) >> 8 << 8; //Enter Value in Mask and shift for clearing bytes
   tempbuf[0] = tempbuf[1] >> 16 | tempbuf[0] << 8>>8;
 
-  executeSPI(tempbuf, 0);
+  executeSPI((uint32_t*)tempbuf); // Requests read for selected channel
 }
 
 float ReadBack (unsigned long selectChannel) // Byte swap is required to use the spi function of arduino with 3 byte
@@ -99,7 +99,7 @@ float ReadBack (unsigned long selectChannel) // Byte swap is required to use the
   tempbuf[1] = tempbuf[1] | selectChannel << 16;
   tempbuf[0] = tempbuf[1] >> 16 | tempbuf[0] << 8>>8;
 
-  executeSPI(tempbuf, 0); // Requests read for selected channel
+  executeSPI((uint32_t*)tempbuf); // Requests read for selected channel
 
   unsigned short received = executeReadCmSPI(tempbuf, 0); // Executes read and uses it
 
@@ -128,7 +128,7 @@ float getUserReq(int CommandSel)
 }
 
 unsigned short convertValue (float value)
-{  
+{
   unsigned short MAX_OUTP = 0xFFFF;
 
   unsigned short NEW_VALUE = (MAX_OUTP / (MAX_V / value));
@@ -157,10 +157,10 @@ unsigned short executeReadCmSPI (uint32_t buf[], int elementToTransf)
   return receivedVal16;
 }
 
-void executeSPI (uint32_t buf[], int elementToTransf)
+void executeSPI (uint32_t *buf)
 {
   digitalWrite(CS, LOW);
   delayMicroseconds(10);
-  SPI.transfer(&buf[elementToTransf], 3);
+  SPI.transfer(buf, 3);
   digitalWrite(CS, HIGH);
 }
